@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+<title>Mobile Code Studio</title>
+<meta name="theme-color" content="#282a36" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<link rel="manifest" href="manifest.json" />
+<link rel="icon" href="icon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="icon.svg" />
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/dracula.min.css" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div id="app">
+
+  <header id="topbar">
+    <button id="btn-files" aria-label="Fichiers" class="icon-btn">☰</button>
+    <div id="current-file">Aucun fichier ouvert</div>
+    <button id="btn-save" aria-label="Enregistrer" class="icon-btn" disabled>💾</button>
+    <button id="btn-ai" aria-label="Assistant IA" class="icon-btn">✨</button>
+    <button id="btn-settings" aria-label="Réglages" class="icon-btn">⚙️</button>
+  </header>
+
+  <div id="editor-wrap">
+    <div id="empty-state">
+      <p>Ouvre un fichier depuis le menu ☰, ou configure d'abord GitHub dans les réglages ⚙️.</p>
+    </div>
+    <textarea id="code-area"></textarea>
+  </div>
+
+  <div id="symbol-toolbar">
+    <button class="sym" data-insert="{">{</button>
+    <button class="sym" data-insert="}">}</button>
+    <button class="sym" data-insert="(">(</button>
+    <button class="sym" data-insert=")">)</button>
+    <button class="sym" data-insert="[">[</button>
+    <button class="sym" data-insert="]">]</button>
+    <button class="sym" data-insert=";">;</button>
+    <button class="sym" data-insert=":">:</button>
+    <button class="sym" data-insert="=">=</button>
+    <button class="sym" data-insert='"'>"</button>
+    <button class="sym" data-insert="'">'</button>
+    <button class="sym" data-insert="<">&lt;</button>
+    <button class="sym" data-insert=">">&gt;</button>
+    <button class="sym" data-insert="/">/</button>
+    <button class="sym" data-insert="_">_</button>
+    <button class="sym" data-action="indent">⇥</button>
+    <button class="sym" data-action="undo">↶</button>
+    <button class="sym" data-action="redo">↷</button>
+  </div>
+
+  <aside id="files-drawer" class="drawer">
+    <div class="drawer-header">
+      <h2>Dépôts</h2>
+      <button id="btn-close-files" class="icon-btn">✕</button>
+    </div>
+    <div id="source-tabs">
+      <button class="tab active" data-source="github">GitHub</button>
+      <button class="tab" data-source="gas">Apps Script</button>
+    </div>
+
+    <div id="github-pane" class="pane">
+      <select id="repo-select"><option>Configure ton jeton GitHub…</option></select>
+      <div id="tree-status" class="hint"></div>
+      <div id="file-tree"></div>
+    </div>
+
+    <div id="gas-pane" class="pane" hidden>
+      <button id="btn-gas-connect" class="primary-btn">Se connecter à Google</button>
+      <select id="gas-project-select"><option value="">— Aucun script ajouté —</option></select>
+      <div class="gas-add-row">
+        <input type="text" id="gas-add-input" placeholder="ID ou URL du script" autocomplete="off" autocapitalize="off" spellcheck="false" />
+        <button id="btn-gas-add" class="small-btn">Ajouter</button>
+      </div>
+      <button id="btn-gas-drive" class="small-btn wide">Charger mes scripts depuis Drive</button>
+      <div id="gas-status" class="hint"></div>
+      <div id="gas-file-list"></div>
+    </div>
+  </aside>
+
+  <section id="ai-panel" class="sheet">
+    <div class="sheet-header">
+      <h2>Assistant IA</h2>
+      <button id="btn-close-ai" class="icon-btn">✕</button>
+    </div>
+    <label class="checkbox-row">
+      <input type="checkbox" id="ai-use-context" checked />
+      Utiliser le fichier ouvert comme contexte
+    </label>
+    <textarea id="ai-instruction" placeholder="Décris ce que tu veux changer ou ajouter dans ce fichier…"></textarea>
+    <button id="btn-ai-generate" class="primary-btn">Générer</button>
+    <div id="ai-status" class="hint"></div>
+    <div id="ai-result" hidden>
+      <pre id="ai-result-code"></pre>
+      <div class="sheet-actions">
+        <button id="btn-ai-apply" class="primary-btn">Remplacer le code de l'éditeur</button>
+        <button id="btn-ai-discard">Ignorer</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="settings-panel" class="sheet">
+    <div class="sheet-header">
+      <h2>Réglages</h2>
+      <button id="btn-close-settings" class="icon-btn">✕</button>
+    </div>
+
+    <div class="settings-group">
+      <h3>GitHub</h3>
+      <label for="gh-token">Jeton d'accès personnel (PAT)</label>
+      <input type="password" id="gh-token" placeholder="ghp_…" autocomplete="off" />
+      <p class="hint">Crée-en un sur github.com → Settings → Developer settings → Personal access tokens, avec le droit "repo" (ou "Contents: Read and write" pour un token fin). Il reste uniquement dans ce navigateur.</p>
+    </div>
+
+    <div class="settings-group">
+      <h3>Assistant IA</h3>
+      <label for="ai-provider">Fournisseur</label>
+      <select id="ai-provider">
+        <option value="anthropic">Anthropic (Claude)</option>
+        <option value="openrouter">OpenRouter</option>
+        <option value="custom">Personnalisé (compatible OpenAI)</option>
+      </select>
+      <label for="ai-key">Clé API</label>
+      <input type="password" id="ai-key" placeholder="Ta clé API" autocomplete="off" />
+      <label for="ai-model">Modèle</label>
+      <input type="text" id="ai-model" placeholder="ex : claude-sonnet-5-5" />
+      <div id="ai-baseurl-row">
+        <label for="ai-baseurl">URL de l'API (fournisseur personnalisé)</label>
+        <input type="text" id="ai-baseurl" placeholder="https://api.exemple.com/v1/chat/completions" />
+      </div>
+      <p class="hint">La clé reste uniquement dans ce navigateur et part en appel direct vers le fournisseur choisi (aucun serveur intermédiaire).</p>
+    </div>
+
+    <div class="settings-group">
+      <h3>Google Apps Script</h3>
+      <label for="google-client-id">ID client OAuth Google</label>
+      <input type="text" id="google-client-id" placeholder="123456-abc.apps.googleusercontent.com" autocomplete="off" autocapitalize="off" spellcheck="false" />
+      <p class="hint">À créer une seule fois dans Google Cloud Console (voir le README). Ce n'est pas un secret : il identifie seulement l'appli.</p>
+      <button id="btn-gas-signout" class="small-btn">Se déconnecter de Google</button>
+    </div>
+
+    <div class="settings-group">
+      <h3>Éditeur</h3>
+      <label for="font-size">Taille de police (<span id="font-size-value">16</span>px)</label>
+      <input type="range" id="font-size" min="12" max="24" value="16" />
+    </div>
+
+    <button id="btn-save-settings" class="primary-btn">Enregistrer</button>
+  </section>
+
+  <div id="overlay"></div>
+  <div id="toast" class="toast" hidden></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/javascript/javascript.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/xml/xml.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/css/css.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/htmlmixed/htmlmixed.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/clike/clike.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/closebrackets.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/matchbrackets.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/selection/active-line.min.js"></script>
+
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="github.js"></script>
+<script src="gas.js"></script>
+<script src="ai.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

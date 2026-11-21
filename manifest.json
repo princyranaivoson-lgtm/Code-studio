@@ -1,0 +1,15 @@
+{
+  "name": "Mobile Code Studio",
+  "short_name": "CodeStudio",
+  "description": "Éditeur de code mobile relié à GitHub, avec assistant IA intégré.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#1e1f29",
+  "theme_color": "#1e1f29",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}
